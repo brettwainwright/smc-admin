@@ -1,0 +1,96 @@
+{% macro render_field(field) %}
+<div class="field">
+  {{ field.label() }}
+  {% if field.errors %}
+  {{ field(**{"aria-invalid": "true", "aria-describedby": field.id ~ "-error"}) }}
+  <p class="error" id="{{ field.id }}-error">{{ field.errors | join(" ") }}</p>
+  {% else %}
+  {{ field() }}
+  {% endif %}
+</div>
+{% endmacro %}
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Volunteer Sign-Up</title>
+  <style>
+{% include "theme.css" %}
+
+    * { box-sizing: border-box; }
+    body {
+      margin: 0; min-height: 100vh; background: var(--app-bg); color: var(--app-text);
+      font: 16px/1.5 var(--app-font);
+      display: flex; align-items: flex-start; justify-content: center; padding: 3rem 1rem;
+    }
+    .card {
+      width: 100%; max-width: 34rem; background: var(--app-surface); border-radius: 12px;
+      box-shadow: 0 1px 3px rgba(16, 24, 40, .08), 0 8px 24px rgba(16, 24, 40, .06);
+      padding: 2rem;
+    }
+    h1 { margin: 0 0 .25rem; font-size: 1.6rem; }
+    .lede { margin: 0 0 1.5rem; color: var(--app-muted); }
+    fieldset { border: 0; padding: 0; margin: 0 0 1.5rem; }
+    legend {
+      font-size: .8rem; font-weight: 700; letter-spacing: .06em; text-transform: uppercase;
+      color: var(--app-muted); margin-bottom: .75rem;
+    }
+    .row { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
+    .field { margin-bottom: 1rem; }
+    label { display: block; font-weight: 600; font-size: .95rem; margin-bottom: .35rem; }
+    input, select {
+      width: 100%; padding: .6rem .75rem; font: inherit; color: inherit;
+      background: var(--app-surface); border: 1px solid var(--app-border); border-radius: var(--app-radius);
+      transition: border-color .15s, box-shadow .15s;
+    }
+    input:focus, select:focus {
+      outline: none; border-color: var(--app-primary); box-shadow: 0 0 0 3px rgba(var(--app-primary-rgb), .18);
+    }
+    [aria-invalid="true"] { border-color: var(--app-error); }
+    [aria-invalid="true"]:focus { box-shadow: 0 0 0 3px rgba(var(--app-error-rgb), .18); }
+    .error { color: var(--app-error); font-size: .875rem; margin: .35rem 0 0; }
+    .notice {
+      background: var(--app-success-bg); color: var(--app-success); border-radius: var(--app-radius);
+      padding: .9rem 1rem; margin-bottom: 1.5rem;
+    }
+    button {
+      width: 100%; padding: .8rem 1rem; font: inherit; font-weight: 600; color: #fff;
+      background: var(--app-primary); border: 0; border-radius: var(--app-radius); cursor: pointer;
+      transition: background .15s;
+    }
+    button:hover { background: var(--app-primary-dark); }
+    button:focus-visible { outline: 3px solid rgba(var(--app-primary-rgb), .4); outline-offset: 2px; }
+    @media (max-width: 30rem) {
+      body { padding: 1rem .75rem; }
+      .card { padding: 1.5rem 1.25rem; }
+      .row { grid-template-columns: 1fr; gap: 0; }
+    }
+  </style>
+</head>
+<body>
+  <main class="card">
+    <h1>Volunteer Sign-Up</h1>
+    <p class="lede">Let us know who you are and when you're available.</p>
+    {% if saved %}
+    <div class="notice" role="status"><strong>Thanks, you're signed up!</strong> You can sign up someone else below.</div>
+    {% endif %}
+    <form method="post" novalidate>
+      <fieldset>
+        <legend>Your name</legend>
+        <div class="row">{{ render_field(form.first) }}{{ render_field(form.last) }}</div>
+      </fieldset>
+      <fieldset>
+        <legend>Contact</legend>
+        <div class="row">{{ render_field(form.email) }}{{ render_field(form.phone) }}</div>
+      </fieldset>
+      <fieldset>
+        <legend>Availability</legend>
+        <div class="row">{{ render_field(form.availability_start) }}{{ render_field(form.start_time) }}</div>
+        <div class="row">{{ render_field(form.availability_end) }}{{ render_field(form.end_time) }}</div>
+      </fieldset>
+      <button type="submit">Sign up</button>
+    </form>
+  </main>
+</body>
+</html>

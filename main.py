@@ -2,16 +2,16 @@ import streamlit as st
 
 from starlette.routing import Mount
 
-from src.db import engine
-from src.admin import create_admin
+from src.admin import app as admin_app
+from src.signup import app as signup_app
 
-admin = create_admin(engine, base_url="/admin")
 
 app = st.App(
-    script_path="src/index.py",
+    script_path="src/viewer.py",
     routes=[
-        Mount("/admin", app=admin.admin),
-    ],
+        Mount(path='/admin', app=admin_app),
+        Mount(path='/signup', app=signup_app),
+    ]
 )
 
 if __name__ == "__main__":

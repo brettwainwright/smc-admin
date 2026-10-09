@@ -1,0 +1,29 @@
+{# Limits the schedule form's volunteer list to people available for the chosen event.
+   available_volunteers comes from ScheduleAdmin.create_context/edit_context.
+   The save-time check in src/models/index.py still applies; this just hides choices that would fail it. #}
+<script>
+  (function () {
+    // event id -> ids of volunteers whose availability covers that event
+    var availableByEvent = {{ available_volunteers | tojson }};
+    var $event = $("#event");
+    var volunteerSelect = document.getElementById("volunteers");
+    if (!$event.length || !volunteerSelect) return;
+
+    var allOptions = Array.from(volunteerSelect.options);
+
+    function filterVolunteers() {
+      var available = new Set(availableByEvent[$event.val()] || []);
+      // Keep anyone already selected so a change of event never silently drops them;
+      // if they don't fit, saving shows why
+      var keep = allOptions.filter(function (option) {
+        return available.has(option.value) || option.selected;
+      });
+      volunteerSelect.replaceChildren.apply(volunteerSelect, keep);
+      $(volunteerSelect).trigger("change");
+    }
+
+    // jQuery handler so it also fires if the event field is ever upgraded to select2
+    $event.on("change", filterVolunteers);
+    filterVolunteers();
+  })();
+</script>

@@ -1,0 +1,19 @@
+/* Shared palette for the sign-up page and the admin.
+   Streamlit can't read this file; keep .streamlit/config.toml in sync with it. */
+:root {
+  --app-bg: #f4f6f9;
+  --app-surface: #ffffff;
+  --app-text: #1d2433;
+  --app-muted: #5b6475;
+  --app-border: #d5dae3;
+  --app-primary: #2457d6;
+  --app-primary-rgb: 36, 87, 214;
+  --app-primary-dark: #1b44aa;
+  --app-error: #c0262d;
+  --app-error-rgb: 192, 38, 45;
+  --app-success: #1e6b3a;
+  --app-success-bg: #e7f6ec;
+  --app-sidebar: #1d2433;
+  --app-radius: 8px;
+  --app-font: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", sans-serif;
+}

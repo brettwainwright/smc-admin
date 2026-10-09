@@ -6,9 +6,10 @@ readme = "README.md"
 requires-python = ">=3.12"
 dependencies = [
     "sqladmin[auth]",
-    "sqlalchemy>=2.0",
+    "sqlalchemy[asyncio]>=2.0",
     "sqlalchemy-sqlitecloud>=0.1",
     "streamlit>=1.65.0",
+    "uvicorn"
 ]
 
 [tool.uv.sources]

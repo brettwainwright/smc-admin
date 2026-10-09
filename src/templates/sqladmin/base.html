@@ -1,0 +1,43 @@
+{# Overrides sqladmin's base.html to apply the shared theme; everything else comes from the original. #}
+{% extends "sqladmin_original/base.html" %}
+{% block head_tail %}
+<style>
+{% include "theme.css" %}
+
+  /* Map the shared palette onto Tabler's variables */
+  :root, [data-bs-theme=light] {
+    --tblr-primary: var(--app-primary);
+    --tblr-primary-rgb: var(--app-primary-rgb);
+    --tblr-primary-darken: var(--app-primary-dark);
+    --tblr-body-bg: var(--app-bg);
+    --tblr-body-color: var(--app-text);
+    --tblr-secondary: var(--app-muted);
+    --tblr-border-color: var(--app-border);
+    --tblr-border-radius: var(--app-radius);
+    --tblr-font-sans-serif: var(--app-font);
+    --tblr-link-color: var(--app-primary);
+    --tblr-link-color-rgb: var(--app-primary-rgb);
+    --tblr-danger: var(--app-error);
+    --tblr-danger-rgb: var(--app-error-rgb);
+    --tblr-success: var(--app-success);
+    --tblr-focus-ring-color: rgba(var(--app-primary-rgb), .18);
+  }
+
+  .navbar-vertical.navbar-dark {
+    --tblr-navbar-bg: var(--app-sidebar);
+    background: var(--app-sidebar);
+  }
+
+  .card {
+    border-color: transparent;
+    border-radius: 12px;
+    box-shadow: 0 1px 3px rgba(16, 24, 40, .08), 0 8px 24px rgba(16, 24, 40, .06);
+  }
+
+  .form-control:focus, .form-select:focus {
+    border-color: var(--app-primary);
+    box-shadow: 0 0 0 3px rgba(var(--app-primary-rgb), .18);
+  }
+</style>
+{{ super() }}
+{% endblock %}

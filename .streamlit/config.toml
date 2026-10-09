@@ -1,0 +1,17 @@
+# Matches the palette in src/templates/theme.css (used by the sign-up page and admin).
+# Streamlit can't read that file, so keep these values in sync by hand.
+[theme]
+base = "light"
+primaryColor = "#2457d6"
+backgroundColor = "#f4f6f9"
+secondaryBackgroundColor = "#ffffff"
+textColor = "#1d2433"
+linkColor = "#2457d6"
+borderColor = "#d5dae3"
+showWidgetBorder = true
+baseRadius = "8px"
+font = "system-ui, -apple-system, Segoe UI, Roboto, Helvetica Neue, sans-serif"
+redColor = "#c0262d"
+greenColor = "#1e6b3a"
+greenBackgroundColor = "#e7f6ec"
+blueColor = "#2457d6"
