@@ -103,8 +103,7 @@ class Event(Base):
         return self.__str__()
 
     def __str__(self) -> str:
-        name = f"{self.description} · " if self.description else ""
-        return f"{name}{self.when} @ {self.location}"
+        return f"{self.name} · {self.when} @ {self.location}"
 
 
 class Volunteer(Base):
@@ -156,7 +155,7 @@ class Volunteer(Base):
     @property
     def scheduled(self) -> list[Markup]:
         return [
-            Markup("<strong>{}</strong> · {} @ {}").format(s.event.description or "Untitled event", s.event.when, s.event.location)
+            Markup("<strong>{}</strong> · {} @ {}").format(s.event.name or "Untitled event", s.event.when, s.event.location)
             for s in self.schedules
         ]
 
