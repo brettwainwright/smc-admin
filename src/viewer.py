@@ -85,14 +85,16 @@ st.caption(f"{events.height} event{'s' if events.height != 1 else ''}")
 # Sorted by day then start, so filtering per day keeps events in time order
 for day in events["day"].unique(maintain_order=True):
     st.subheader(format_day(day))
-    st.dataframe(
-        events.filter(pl.col("day") == day).select(
-            pl.col("time").alias("Time"),
-            pl.col("event").alias("Event"),
-            pl.col("location").alias("Location"),
-            pl.col("type").alias("Type"),
-            pl.col("details").alias("Details"),
-        ),
-        hide_index=True,
-        width="stretch",
-    )
+    for event in events.filter(pl.col("day") == day).iter_rows(named=True):
+        with st.container(border=True):
+            title_col, type_col = st.columns([3, 1], vertical_alignment="center")
+            title_col.markdown(f"#### {event['event']}")
+            if event["type"]:
+                with type_col:
+                    st.badge(event["type"], color="blue")
+            st.markdown(
+                f":material/schedule: **{event['time']}**  \n"
+                f":material/location_on: {event['location']}"
+            )
+            if event["details"]:
+                st.caption(event["details"])

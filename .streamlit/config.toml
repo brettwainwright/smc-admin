@@ -1,5 +1,16 @@
 # Matches the palette in src/templates/theme.css (used by the sign-up page and admin).
 # Streamlit can't read that file, so keep these values in sync by hand.
+[client]
+showErrorDetails = "none"
+toolbarMode = "viewer"
+
+[runner]
+fastReruns = true
+
+[browser]
+gatherUsageStats = false
+
+
 [theme]
 base = "light"
 primaryColor = "#2457d6"
