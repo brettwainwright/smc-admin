@@ -9,7 +9,9 @@ dependencies = [
     "sqlalchemy[asyncio]>=2.0",
     "sqlalchemy-sqlitecloud>=0.1",
     "streamlit>=1.65.0",
-    "uvicorn"
+    "uvicorn",
+    "polars>=2.0.0",
+    "pydantic-settings>=2.15.0",
 ]
 
 [tool.uv.sources]

@@ -1,19 +1,12 @@
-import streamlit as st
 from sqlalchemy import create_engine, inspect, select
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.schema import CreateColumn
 
 from src.models import Base, EventType
+from src.setup import settings
 
 
-
-cloud = st.secrets.get('db', None)
-if cloud is None:
-    raise ValueError("No sql connection found")
-
-# url = "sqlite:///db.sqlite"
-
-engine = create_engine(url=cloud)
+engine = create_engine(url=settings.db)
 SessionLocal = sessionmaker(bind=engine)
 
 Base.metadata.create_all(engine)

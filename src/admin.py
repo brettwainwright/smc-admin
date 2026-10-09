@@ -1,6 +1,5 @@
 import secrets
 from typing import Any
-import streamlit as st
 from pathlib import Path
 
 from sqladmin import Admin, ModelView
@@ -18,6 +17,7 @@ from src.db import engine
 from src.models.validators import email_validators, phone_validators
 from src.models import Event, EventType, Location, Schedule, Volunteer
 from src.models.index import EVENT_DAYS
+from src.setup import settings
 
 
 def to_date(value):
@@ -174,11 +174,6 @@ class ScheduleAdmin(ModelView, model=Schedule):
         return {"available_volunteers": await run_in_threadpool(available_volunteers_by_event)}
 
 
-
-username = st.secrets.get('username', None)
-password = st.secrets.get('password', None)
-secret_key = st.secrets.get('secret_key', None)
-
 app = Starlette()
 admin = Admin(
     app=app,
@@ -187,7 +182,7 @@ admin = Admin(
     templates_dir=str(Path(__file__).parent / "templates"),
     title="SMC Admin",
     debug=True,
-    authentication_backend=AdminAuth(secret_key=secret_key, username=username, password=password),
+    authentication_backend=AdminAuth(secret_key=settings.secret_key, username=settings.username, password=settings.password),
 )
 admin.add_view(LocationAdmin)
 admin.add_view(EventTypeAdmin)

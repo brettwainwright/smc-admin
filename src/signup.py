@@ -2,7 +2,6 @@ import secrets
 from datetime import date, datetime
 from pathlib import Path
 
-import streamlit as st
 from sqlalchemy.orm import Session
 from starlette.applications import Starlette
 from starlette.concurrency import run_in_threadpool
@@ -17,14 +16,10 @@ from src.db import engine
 from src.models import Volunteer
 from src.models.validators import email_validators, phone_validators
 from src.models.index import EVENT_DAYS
+from src.setup import settings
 
 
 templates = Jinja2Templates(directory=Path(__file__).parent / "templates")
-
-SIGNUP_KEY = st.secrets.get("signup_key", None)
-if not SIGNUP_KEY:
-    raise ValueError("No signup_key found")
-SIGNUP_KEY = str(SIGNUP_KEY)  # compare_digest needs str on both sides; TOML may give a number
 
 
 DAY_CHOICES = [(d.isoformat(), d.isoformat()) for d in EVENT_DAYS]
@@ -76,7 +71,7 @@ def save_volunteer(form: SignupForm) -> None:
 
 def has_valid_key(request: Request) -> bool:
     # compare_digest avoids leaking how much of the key matched via timing
-    return secrets.compare_digest(request.query_params.get("signup_key", ""), SIGNUP_KEY)
+    return secrets.compare_digest(request.query_params.get("signup_key", ""), settings.signup_key)
 
 
 async def signup(request: Request):
