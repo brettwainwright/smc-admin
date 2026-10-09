@@ -1,3 +1,5 @@
+from pathlib import Path
+
 import polars as pl
 import streamlit as st
 from sqlalchemy import select
@@ -25,6 +27,7 @@ def load_events(volunteer_id: int) -> pl.DataFrame:
             Event.name.label("event"),
             EventType.name.label("type"),
             Location.name.label("location"),
+            Event.description,
             Event.details,
         )
         .select_from(Event)
@@ -50,6 +53,10 @@ def load_events(volunteer_id: int) -> pl.DataFrame:
         )
     )
 
+
+# Must be a Path (a plain string is rendered as literal HTML); a .css file is wrapped in
+# <style> tags and applied without taking up space on the page
+st.html(Path(__file__).parent / "styles.css")
 
 st.title("SMC Volunteer Schedule")
 
@@ -92,9 +99,13 @@ for day in events["day"].unique(maintain_order=True):
             if event["type"]:
                 with type_col:
                     st.badge(event["type"], color="blue")
+            # Every event field except the ids; optional ones only appear when they have a value
             st.markdown(
+                f":material/calendar_today: {format_day(event['day'])}  \n"
                 f":material/schedule: **{event['time']}**  \n"
                 f":material/location_on: {event['location']}"
             )
+            if event["description"]:
+                st.markdown(f"**Description**  \n{event['description']}")
             if event["details"]:
-                st.caption(event["details"])
+                st.markdown(f"**Details**  \n{event['details']}")
