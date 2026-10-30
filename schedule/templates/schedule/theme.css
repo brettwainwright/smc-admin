@@ -1,0 +1,28 @@
+/* Shared palette, included by the viewer, the sign-up page, and the admin
+   (templates/admin/base_site.html). Colors are sampled from the SMC 2027 artwork in theme/. */
+:root {
+  /* Brand */
+  --brand-crimson: #9a0d2f;   /* dark end of the logo gradient */
+  --brand-red: #c03840;
+  --brand-coral: #f26f56;     /* light end of the logo gradient (decorative only: too light for text) */
+  --brand-navy: #285070;      /* from the SMC / StuMo circle marks */
+  --brand-teal: #4c7a8d;
+  --brand-gradient: linear-gradient(90deg, var(--brand-crimson), var(--brand-coral));
+
+  /* UI roles */
+  --app-bg: #f2f2f2;          /* matches the White Gradient backdrop */
+  --app-surface: #ffffff;
+  --app-text: #1d2433;
+  --app-muted: #5b6475;
+  --app-border: #dedada;
+  --app-primary: var(--brand-red);
+  --app-primary-rgb: 192, 56, 64;
+  --app-primary-dark: var(--brand-crimson);
+  --app-error: #b42318;
+  --app-error-rgb: 180, 35, 24;
+  --app-success: #1e6b3a;
+  --app-success-bg: #e7f6ec;
+  --app-sidebar: var(--brand-crimson);
+  --app-radius: 8px;
+  --app-font: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", sans-serif;
+}

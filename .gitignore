@@ -15,3 +15,13 @@ wheels/
 
 # Streamlit secrets
 .streamlit/secrets.toml
+
+# Local env file (may hold secrets; not used by the app)
+.env
+
+# TLS certificates and private keys for nginx
+nginx/certs/
+
+# Local SQLite database and collected static files
+data/
+staticfiles/

@@ -1,0 +1,82 @@
+{% extends "admin/change_form.html" %}
+{% block admin_change_form_document_ready %}
+{{ block.super }}
+{{ volunteer_bookings|json_script:"volunteer-bookings" }}
+{% comment %}
+  Narrows the volunteer list to people who are available for this event's day/times and not on an
+  overlapping event, updating as the day or times change. volunteer_bookings comes from
+  EventAdmin.changeform_view. The save-time check (EventAdminForm.clean) still applies; this just
+  hides choices that would fail it.
+{% endcomment %}
+<script>
+  (function () {
+    var bookings = JSON.parse(document.getElementById("volunteer-bookings").textContent);
+    var day = document.getElementById("id_day");
+    var start = document.getElementById("id_start");
+    var end = document.getElementById("id_end");
+    var volunteerSelect = document.getElementById("id_volunteers");
+    if (!day || !start || !end || !volunteerSelect) return;
+
+    // This event's id from the URL (/admin/schedule/event/<id>/change/), so its own slot isn't a clash
+    var match = location.pathname.match(/\/event\/(\d+)\/change\//);
+    var eventId = match ? Number(match[1]) : null;
+    var allOptions = Array.from(volunteerSelect.options);
+    var note = document.createElement("p");
+    note.className = "help";
+    volunteerSelect.after(note);
+
+    // "13:00", "13:00:00", or "1:00 PM" -> [hours, minutes]
+    function parseTime(value) {
+      var m = /^\s*(\d{1,2}):(\d{2})(?::\d{2})?\s*([ap]\.?m\.?)?\s*$/i.exec(value);
+      if (!m) return null;
+      var h = Number(m[1]) % 12 + (m[3] && /p/i.test(m[3]) ? 12 : m[3] ? 0 : Math.floor(Number(m[1]) / 12) * 12);
+      return [h, Number(m[2])];
+    }
+
+    function at(isoDay, hm) {
+      var p = isoDay.split("-").map(Number);
+      return new Date(p[0], p[1] - 1, p[2], hm[0], hm[1]);
+    }
+
+    function eventWindow() {
+      var s = parseTime(start.value), e = parseTime(end.value);
+      if (!day.value || !s || !e) return null;
+      var from = at(day.value, s), until = at(day.value, e);
+      // An end time at or before the start means the event runs past midnight
+      if (until <= from) until.setDate(until.getDate() + 1);
+      return [from, until];
+    }
+
+    function isFree(id, from, until) {
+      var b = bookings[id];
+      if (!b) return true;
+      if (new Date(b.from) > from || new Date(b.until) < until) return false;
+      return !b.busy.some(function (slot) {
+        return slot[2] !== eventId && new Date(slot[0]) < until && from < new Date(slot[1]);
+      });
+    }
+
+    function filterVolunteers() {
+      var w = eventWindow();
+      // Keep anyone already selected so a change of time never silently drops them;
+      // if they don't fit, saving shows why
+      var keep = w ? allOptions.filter(function (o) { return o.selected || isFree(o.value, w[0], w[1]); }) : allOptions;
+      volunteerSelect.replaceChildren.apply(volunteerSelect, keep);
+      note.textContent = w
+        ? keep.length + " of " + allOptions.length + " volunteers are free at this time."
+        : "Set the day, start, and end to see who's free.";
+    }
+
+    [day, start, end].forEach(function (input) {
+      input.addEventListener("change", filterVolunteers);
+      input.addEventListener("input", filterVolunteers);
+    });
+    // The admin's clock/"Now" shortcuts set the value without firing change, so re-check after other clicks
+    // (not ones in the volunteer list itself, which would rebuild it mid-selection)
+    document.addEventListener("click", function (e) {
+      if (!volunteerSelect.contains(e.target)) setTimeout(filterVolunteers, 0);
+    });
+    filterVolunteers();
+  })();
+</script>
+{% endblock %}

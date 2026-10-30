@@ -1,0 +1,37 @@
+services:
+  app:
+    build: .
+    # Not published to the host; only reachable through Caddy on the compose network
+    expose:
+      - "8000"
+    # Settings (signup_key, username, password, secret_key, allowed_hosts, csrf_trusted_origins) come
+    # from the host's .env as environment variables; .env itself is never baked into the image (see .dockerignore)
+    env_file: .env
+    volumes:
+      # SQLite database (DB_PATH=/app/data/db.sqlite3, set in the Dockerfile)
+      - app-data:/app/data
+    restart: unless-stopped
+
+  caddy:
+    image: caddy:2-alpine
+    ports:
+      - "80:80"        # Let's Encrypt challenge and the http->https redirect
+      - "443:443"
+      - "443:443/udp"  # HTTP/3
+    environment:
+      DOMAIN: smcbransonvolunteers.org
+      ACME_EMAIL: 28bwainwright@gmail.com
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      # Certificates; keep this volume or they're re-requested on every restart (Let's Encrypt rate-limits)
+      - caddy-data:/data
+      - caddy-config:/config
+    depends_on:
+      app:
+        condition: service_healthy
+    restart: unless-stopped
+
+volumes:
+  app-data:
+  caddy-data:
+  caddy-config:
