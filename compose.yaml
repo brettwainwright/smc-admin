@@ -4,7 +4,7 @@ services:
     # Not published to the host; only reachable through Caddy on the compose network
     expose:
       - "8000"
-    # Settings (signup_key, username, password, secret_key, allowed_hosts, csrf_trusted_origins) come
+    # Settings (username, password, secret_key, allowed_hosts, csrf_trusted_origins) come
     # from the host's .env as environment variables; .env itself is never baked into the image (see .dockerignore)
     env_file: .env
     volumes:

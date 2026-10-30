@@ -12,7 +12,7 @@
 
 	header Strict-Transport-Security "max-age=31536000"
 
-	# Forms only (sign-up, admin); no uploads
+	# Admin forms only; no uploads
 	request_body {
 		max_size 1MB
 	}

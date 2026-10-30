@@ -1,9 +1,9 @@
 # SMC 2027 Volunteer Scheduling
 
-Volunteer sign-up and scheduling for SMC 2027 (Jan 2–5, 2027).
+Volunteer scheduling for SMC 2027 (Jan 2–5, 2027).
 
-- **Volunteers** sign up through a private link, then look up their own schedule on a simple mobile-friendly page.
-- **Organizers** build the schedule in an admin site. It includes a day-by-day board, staffing counts, printable rosters and CSV export, and checks that stop anyone being double-booked or scheduled outside their availability.
+- **Volunteers** look up their own schedule on a simple mobile-friendly page.
+- **Organizers** add volunteers and build the schedule in an admin site. It includes a day-by-day board, staffing counts, printable rosters and CSV export, and checks that stop anyone being double-booked or scheduled outside their availability.
 
 Built with [Django](https://www.djangoproject.com/) served by [Django-Bolt](https://github.com/FarhanAliRaza/django-bolt), with a local SQLite database.
 
@@ -24,7 +24,6 @@ Then open:
 | Page | URL |
 |---|---|
 | Volunteer schedule lookup | http://127.0.0.1:8000/ |
-| Volunteer sign-up | http://127.0.0.1:8000/signup?signup_key=YOUR_SIGNUP_KEY |
 | Admin | http://127.0.0.1:8000/admin/ |
 
 `DEBUG=true` is needed to log in to the admin over plain `http://`. `--dev` reloads the server when files change. Never use `DEBUG=true` in production.
@@ -38,7 +37,7 @@ uv run python manage.py seed_mock            # refuses if the database already h
 uv run python manage.py seed_mock --reset    # deletes ALL events, volunteers, and locations first
 ```
 
-Never run `--reset` against a database with real sign-ups.
+Never run `--reset` against a database with real volunteers.
 
 ## Configuration
 
@@ -46,7 +45,6 @@ Settings are read from a `.env` file in the project root; real environment varia
 
 ```ini
 # Required
-signup_key=<long random value>     # the ?signup_key= in the sign-up link
 username=<admin username>
 password=<admin password>          # run `manage.py ensure_admin` after changing either
 secret_key=<long random value>     # Django SECRET_KEY; changing it signs everyone out
@@ -80,7 +78,7 @@ The header links go to **Board**, **Events**, and **Volunteers**.
 - **Board.** Every event laid out by day and time, colored by staffing. Click an event to edit it.
 - **Rosters.** Use **Print roster** (all events, or one day from the board), or select events and choose the *Print roster* action. Each day prints on its own page. Rosters include phone numbers, so hand them only to event leads.
 - **CSV export.** Select events and choose *Export selected events to CSV*. The file includes volunteers' email addresses and phone numbers.
-- **Volunteers.** The list shows each person's shift count and hours, with filters for *No shifts yet* and *Available on* a given day. A volunteer's page lists their shifts in time order.
+- **Volunteers.** Add volunteers with *Add volunteer*, entering their contact details and the window they're available. The list shows each person's shift count and hours, with filters for *No shifts yet* and *Available on* a given day. A volunteer's page lists their shifts in time order.
 
 ## Customizing
 
@@ -122,12 +120,11 @@ manage.py
 smc/                    Django project: settings, .env loading (env.py), URLs
 schedule/               the app
   models.py             Event, Volunteer, Location, EventType + scheduling rules
-  api.py                public pages and JSON (Bolt routes): /, /api/..., /signup
+  api.py                public page and JSON (Bolt routes): /, /api/...
   admin.py              admin setup, board, roster, CSV export
-  forms.py              sign-up form
   signals.py            backstop checks for changes made outside forms
   management/commands/  ensure_admin, seed_mock
-  templates/            viewer, sign-up, admin overrides, shared theme.css
+  templates/            viewer, admin overrides, shared theme.css
   static/               brand images, map/schedule images
 theme/                  source brand artwork (not deployed)
 Caddyfile, compose.yaml, Dockerfile

@@ -20,10 +20,10 @@ class Settings(BaseSettings):
         env_file=ENV_FILE, env_file_encoding="utf-8", extra="ignore", hide_input_in_errors=True
     )
 
-    signup_key: str = Field(repr=False)
-    username: str = Field(repr=False)  # admin superuser, created/updated by `manage.py ensure_admin`
-    password: str = Field(repr=False)
-    secret_key: str = Field(repr=False)  # Django SECRET_KEY (sessions, CSRF)
+    # Minimum lengths stop a blank value (e.g. a copied .env.example) from being accepted
+    username: str = Field(repr=False, min_length=1)  # admin superuser, created/updated by `manage.py ensure_admin`
+    password: str = Field(repr=False, min_length=8)
+    secret_key: str = Field(repr=False, min_length=32)  # Django SECRET_KEY (sessions, CSRF)
     db_path: Path = BASE_DIR / "data" / "db.sqlite3"
     debug: bool = False
     time_zone: str = "America/Chicago"  # US Central (CST in January); wall-clock zone for event times

@@ -33,7 +33,8 @@ ENV PATH="/app/.venv/bin:$PATH" \
 
 # Admin CSS/JS (and photos) into /app/staticfiles, which runbolt serves at /static.
 # Settings are required at import time; these build-only placeholders never reach the runtime image env.
-RUN SIGNUP_KEY=build USERNAME=build PASSWORD=build SECRET_KEY=build DB_PATH=/tmp/build.sqlite3 \
+RUN USERNAME=build PASSWORD=build-placeholder \
+    SECRET_KEY=build-placeholder-secret-not-used-at-runtime DB_PATH=/tmp/build.sqlite3 \
     python manage.py collectstatic --noinput
 
 USER app

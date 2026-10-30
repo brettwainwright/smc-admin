@@ -1,6 +1,0 @@
-{# Django marks widgets with errors aria-invalid="true" #}
-<div class="field">
-  {{ field.label_tag }}
-  {{ field }}
-  {% if field.errors %}<p class="error" id="{{ field.auto_id }}-error">{{ field.errors|join:" " }}</p>{% endif %}
-</div>
