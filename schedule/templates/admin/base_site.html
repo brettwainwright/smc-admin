@@ -1,0 +1,85 @@
+{% extends "admin/base_site.html" %}
+{# Applies the SMC brand on top of Django admin; everything else comes from the original. #}
+{% load static %}
+{% block extrahead %}
+{{ block.super }}
+<link rel="icon" type="image/png" sizes="32x32" href="{% static 'brand/favicon-32.png' %}">
+{% endblock %}
+{% block extrastyle %}
+{{ block.super }}
+<style>
+{% include "schedule/theme.css" %}
+
+  /* Map the brand onto Django admin's variables. Only brand/accent roles are set, so the
+     admin's own light and dark page colors still apply. */
+  :root, html[data-theme="light"], html[data-theme="dark"] {
+    --primary: var(--brand-crimson);
+    --secondary: var(--brand-red);
+    --accent: #ffd0c4;
+    --primary-fg: #fff;
+    --header-bg: var(--brand-crimson);
+    --header-branding-color: #fff;
+    --breadcrumbs-bg: var(--brand-red);
+    --button-bg: var(--brand-red);
+    --button-hover-bg: var(--brand-crimson);
+    --default-button-bg: var(--brand-crimson);
+    --default-button-hover-bg: #6e0a22;
+    --object-tools-bg: var(--brand-navy);
+    --object-tools-hover-bg: #1b3a52;
+    --font-family-primary: var(--app-font);
+  }
+  /* Red links only on light backgrounds; dark mode keeps the admin's lighter link color */
+  html[data-theme="light"] { --link-fg: var(--brand-red); --link-hover-color: var(--brand-crimson); }
+  @media (prefers-color-scheme: light) {
+    html[data-theme="auto"] { --link-fg: var(--brand-red); --link-hover-color: var(--brand-crimson); }
+  }
+
+  #header { border-bottom: 4px solid; border-image: var(--brand-gradient) 1; }
+  #site-name a { display: inline-flex; align-items: center; gap: .6rem; }
+  #site-name img { width: 28px; height: 28px; }
+
+  /* Header shortcuts (nav-global block below) */
+  .smc-nav { display: flex; gap: 1.25rem; margin-left: 2rem; font-size: .95rem; }
+  .smc-nav a, .smc-nav a:link, .smc-nav a:visited { color: #fff; }
+  .smc-nav a:hover { text-decoration: underline; }
+
+  /* Staffing badges: events list, board, volunteer pages */
+  .staffing { display: inline-block; padding: .05rem .5rem; border-radius: 999px; font-weight: 600; font-size: .8rem; white-space: nowrap; }
+  .staffing-under { color: #b42318; background: rgba(180, 35, 24, .12); }
+  .staffing-full { color: #1e6b3a; background: rgba(30, 107, 58, .14); }
+  .staffing-over { color: var(--brand-navy); background: rgba(40, 80, 112, .14); }
+  html[data-theme="dark"] .staffing-under { color: #ff9c8f; }
+  html[data-theme="dark"] .staffing-full { color: #8fdca8; }
+  html[data-theme="dark"] .staffing-over { color: #9cc3e0; }
+  @media (prefers-color-scheme: dark) {
+    html[data-theme="auto"] .staffing-under { color: #ff9c8f; }
+    html[data-theme="auto"] .staffing-full { color: #8fdca8; }
+    html[data-theme="auto"] .staffing-over { color: #9cc3e0; }
+  }
+  .shift-list { margin: 0; padding-left: 1.1rem; }
+
+  /* Day headings on the board and roster: crimson is too dark on the dark theme */
+  :root { --smc-heading: var(--brand-crimson); }
+  html[data-theme="dark"] { --smc-heading: var(--brand-coral); }
+  @media (prefers-color-scheme: dark) { html[data-theme="auto"] { --smc-heading: var(--brand-coral); } }
+</style>
+{% endblock %}
+{% block branding %}
+<div id="site-name">
+  <a href="{% url 'admin:index' %}">
+    <img src="{% static 'brand/snowflake-white-96.png' %}" alt="">{{ site_header|default:_('Django administration') }}
+  </a>
+</div>
+{% if user.is_anonymous %}
+  {% include "admin/color_theme_toggle.html" %}
+{% endif %}
+{% endblock %}
+{% block nav-global %}
+{% if has_permission %}
+<nav class="smc-nav" aria-label="Scheduling">
+  <a href="{% url 'admin:schedule_event_board' %}">Board</a>
+  <a href="{% url 'admin:schedule_event_changelist' %}">Events</a>
+  <a href="{% url 'admin:schedule_volunteer_changelist' %}">Volunteers</a>
+</nav>
+{% endif %}
+{% endblock %}

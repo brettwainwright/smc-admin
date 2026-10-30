@@ -1,0 +1,54 @@
+{% extends "admin/base_site.html" %}
+{# Printable roster: open from the board, the events list, or the "Print roster" action. Contains volunteer phone numbers. #}
+{% block extrastyle %}
+{{ block.super }}
+<style>
+  .roster-day h2 { margin: 1.5rem 0 .5rem; color: var(--smc-heading); text-transform: uppercase; letter-spacing: .06em; }
+  .roster-event { break-inside: avoid; margin: 0 0 1rem; padding: .75rem 1rem; border: 1px solid var(--hairline-color); border-radius: 8px; }
+  .roster-event h3 { margin: 0 0 .25rem; font-size: 1rem; background: none; color: var(--body-fg); padding: 0; }
+  .roster-event table { width: 100%; margin-top: .5rem; }
+  .roster-event td { padding: .25rem .5rem; }
+  .roster-empty { color: #b42318; font-weight: 600; }
+  @media print {
+    #header, .breadcrumbs, #footer, .roster-actions, #nav-sidebar, #toggle-nav-sidebar { display: none !important; }
+    .main > #content-start + #content, #content { padding: 0 !important; margin: 0 !important; }
+    .roster-day { break-before: page; }
+    .roster-day:first-of-type { break-before: auto; }
+  }
+</style>
+{% endblock %}
+{% block breadcrumbs %}
+<ol class="breadcrumbs">
+  <li><a href="{% url 'admin:index' %}">Home</a></li>
+  <li><a href="{% url 'admin:schedule_event_changelist' %}">{{ opts.verbose_name_plural|capfirst }}</a></li>
+  <li aria-current="page">Roster</li>
+</ol>
+{% endblock %}
+{% block content %}
+<p class="roster-actions">
+  <button type="button" class="button default" onclick="window.print()">Print</button>
+  Each day starts on a new page. Contains volunteer phone numbers: hand out to event leads only.
+</p>
+{% for label, events in days %}
+<section class="roster-day">
+  <h2>{{ label }}</h2>
+  {% for ev in events %}
+  <div class="roster-event">
+    <h3>{{ ev.name }}{% if ev.type %} <small>· {{ ev.type }}</small>{% endif %}</h3>
+    {{ ev.start|time:"g:i A" }} – {{ ev.end|time:"g:i A" }} · {{ ev.location }} · {{ ev.volunteers.all|length }} of {{ ev.needed }} volunteers
+    {% with people=ev.volunteers.all %}
+    {% if people %}
+    <table>
+      {% for v in people %}<tr><td>☐</td><td>{{ v.full_name }}</td><td>{{ v.phone }}</td></tr>{% endfor %}
+    </table>
+    {% else %}
+    <p class="roster-empty">Nobody assigned yet.</p>
+    {% endif %}
+    {% endwith %}
+  </div>
+  {% endfor %}
+</section>
+{% empty %}
+<p>No events match.</p>
+{% endfor %}
+{% endblock %}

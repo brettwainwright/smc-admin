@@ -1,0 +1,19 @@
+# Reverse proxy in front of the Django-Bolt app. Caddy redirects http->https and gets/renews a
+# Let's Encrypt certificate for DOMAIN automatically (DNS must point here; ports 80/443 open).
+# DOMAIN and ACME_EMAIL come from .env via compose.yaml.
+{
+	# Let's Encrypt contacts this address about expiring or problem certificates
+	email {$ACME_EMAIL}
+}
+
+{$DOMAIN} {
+	# Passes Host through and sets X-Forwarded-Proto, which Django reads (SECURE_PROXY_SSL_HEADER)
+	reverse_proxy app:8000
+
+	header Strict-Transport-Security "max-age=31536000"
+
+	# Admin forms only; no uploads
+	request_body {
+		max_size 1MB
+	}
+}

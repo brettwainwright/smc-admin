@@ -1,8 +1,0 @@
-
-header[data-testid="stHeader"] {
-    visibility: hidden;
-}
-
-div[data-testid="stMainBlockContainer"] {
-    padding: 1rem;
-} 
