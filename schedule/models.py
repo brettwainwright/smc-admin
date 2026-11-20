@@ -1,11 +1,12 @@
 from datetime import date, datetime, time, timedelta
 
 from django.core.exceptions import ValidationError
+from django.core.validators import FileExtensionValidator
 from django.db import models
 from django.db.models import Q
 from django.utils.html import format_html
 
-from schedule.validators import validate_email, validate_phone
+from schedule.validators import MAX_IMAGE_MB, validate_email, validate_image_size, validate_phone
 
 # Allowed range for event and availability days (inclusive)
 EVENT_FIRST_DAY = date(2027, 1, 2)
@@ -250,3 +251,41 @@ def availability_problems(pairs) -> list[str]:
         for v, ev in set(pairs)
         if not v.is_available_for(ev)
     )
+
+
+def home_image(**kwargs) -> models.ImageField:
+    return models.ImageField(
+        upload_to="home/", blank=True,
+        validators=[FileExtensionValidator(["jpg", "jpeg", "png"]), validate_image_size],
+        help_text=f"JPEG or PNG, up to {MAX_IMAGE_MB} MB. Until one is uploaded, the home page shows the placeholder mockup.",
+        **kwargs,
+    )
+
+
+class HomePageImages(models.Model):
+    """The map and full schedule linked from the home page (one row; see HomePageImagesAdmin)."""
+
+    KINDS = ["map", "schedule"]
+
+    map = home_image()
+    schedule = home_image()
+    updated = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        verbose_name = verbose_name_plural = "home page images"
+
+    @classmethod
+    def load(cls) -> "HomePageImages":
+        return cls.objects.get_or_create(pk=1)[0]
+
+    def save(self, *args, **kwargs) -> None:
+        # Remove files that were replaced or cleared, so media/home/ doesn't collect orphans
+        old = HomePageImages.objects.filter(pk=self.pk).first()
+        super().save(*args, **kwargs)
+        for kind in self.KINDS if old else []:
+            previous = getattr(old, kind)
+            if previous and previous.name != getattr(self, kind).name:
+                previous.delete(save=False)
+
+    def __str__(self) -> str:
+        return "Home page images"

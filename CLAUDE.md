@@ -9,7 +9,8 @@ A volunteer scheduling app for an event (SMC 2027) running on fixed days (`EVENT
 - `/` — plain HTML viewer (`schedule/templates/schedule/viewer.html`): a volunteer picks their name and vanilla JS fetches and renders their events.
 - `/api/volunteers`, `/api/volunteers/{id}/events` — JSON for the viewer.
 - `/admin/` — Django admin, including a schedule **board** (`/admin/schedule/event/board/`) and a printable **roster** (`/admin/schedule/event/roster/`).
-- `/static/` — admin assets, brand images (`schedule/static/brand/`), and the map/schedule images (`schedule/static/photos/`; the committed ones are labelled mockups).
+- `/static/` — admin assets, brand images (`schedule/static/brand/`), and the fallback map/schedule mockups (`schedule/static/photos/`).
+- `/map`, `/schedule` — pages around the map/schedule image (`schedule/templates/schedule/image.html`), so the tab gets a title; `/images/map`, `/images/schedule` serve the image uploaded in the admin (**Home page images**), or redirect to the mockup until one is uploaded.
 - `/health`, `/ready` — Bolt's health endpoints (`/ready` also checks the DB); Docker's healthcheck uses `/health`.
 
 The README describes the original Streamlit starter template and is stale.
@@ -52,6 +53,7 @@ There are no tests, linter, or formatter configured.
   - `VolunteerAdminForm.clean` (`schedule/admin.py`) and the import resource's `save_m2m` reject slot changes that would strand existing assignments (`Volunteer.availability_problems(slots)`).
   - Intentionally *not* re-checked outside forms: event time edits (admin saves the event before its new volunteer list, so a `pre_save` check would test new times against the old list) and slot changes (`slots.set()` removes before it adds, so an `m2m_changed` check would fail mid-way).
 - **Registration import** (`schedule/resources.py`, admin: Volunteers → Import) uses django-import-export on the registration form's "Registrants" `.xlsx` export. `RegistrantsXLSX` skips the title rows above the "First Name" header; `HEADERS` maps columns by header prefix (some headers are whole questions); "Volunteer Times" tokens like `January 3rd - Afternoon` become slots, and an unrecognised token is a row error. Rows match existing volunteers on first + last + email (also a DB unique constraint), so re-importing updates rather than duplicates. The file holds registrants' personal details: never commit it or copy it into fixtures.
+- **Home page images.** `HomePageImages` is a single row (`load()`); its admin has no add/delete and the changelist redirects to the upload form. Files go to `MEDIA_ROOT` (`data/media`, on the `app-data` volume in Docker), and replaced files are deleted on save. There is deliberately no `/media/` route: `/images/<kind>` serves them via Bolt's `FileResponse`, limited to `BOLT_ALLOWED_FILE_PATHS`. The `Caddyfile` body limit (12 MB) must stay above the 10 MB image cap.
 - **Day ranges** are enforced by DB `CheckConstraint`s (`in_event_days()`) and by `choices=DAY_CHOICES` on the date fields, which drives the admin selects. Changing the event dates means updating the constants and generating a migration.
 - **Admin extras** (`schedule/admin.py`):
   - Board and roster are custom views added via `EventAdmin.get_urls`.

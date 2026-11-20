@@ -64,6 +64,12 @@ USE_TZ = False
 STATIC_URL = "static/"
 STATIC_ROOT = BASE_DIR / "staticfiles"
 
+# Admin uploads (home page images), next to the database so they live on the app-data volume.
+# There's no /media/ route: /images/<kind> (schedule/api.py) serves them, and Bolt's FileResponse
+# refuses paths outside BOLT_ALLOWED_FILE_PATHS.
+MEDIA_ROOT = env.db_path.parent / "media"
+BOLT_ALLOWED_FILE_PATHS = [MEDIA_ROOT]
+
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
 # nginx terminates TLS and sets X-Forwarded-Proto

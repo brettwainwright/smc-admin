@@ -1,0 +1,38 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  {# Wraps the image so the tab shows this title rather than the browser's "map.png (1200×900)" #}
+  <title>SMC 2027 {{ title }}</title>
+  {% include "schedule/_brand_head.html" %}
+  <style>
+{% include "schedule/theme.css" %}
+
+    * { box-sizing: border-box; }
+    body {
+      margin: 0; min-height: 100vh; background: var(--app-bg); color: var(--app-text);
+      font: 16px/1.5 var(--app-font);
+    }
+    nav {
+      display: flex; align-items: center; gap: 1rem; padding: .75rem 1rem; background: var(--app-surface);
+      border-bottom: 4px solid; border-image: var(--brand-gradient) 1;
+    }
+    nav a { color: var(--brand-crimson); font-weight: 600; text-decoration: none; }
+    nav a:hover { text-decoration: underline; }
+    h1 { margin: 0; font-size: 1.1rem; }
+    main { padding: 1rem; text-align: center; }
+    main img { max-width: 100%; height: auto; }
+  </style>
+</head>
+<body>
+  <nav>
+    <a href="/">← Back</a>
+    <h1>{{ title }}</h1>
+  </nav>
+  <main>
+    {# Tapping the image opens it on its own, for zooming in #}
+    <a href="{{ src }}"><img src="{{ src }}" alt="{{ title }}"></a>
+  </main>
+</body>
+</html>

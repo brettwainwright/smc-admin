@@ -93,10 +93,10 @@
     {% endif %}
   </main>
 
-  {# Images are served from schedule/static/photos #}
+  {# /map and /schedule wrap /images/<kind>: the admin upload (Home page images), or the mockups in schedule/static/photos #}
   <nav>
-    <a href="{% static 'photos/map.jpeg' %}">🗺️ View map</a>
-    <a href="{% static 'photos/schedule.jpeg' %}">📅 Full schedule</a>
+    <a href="/map?v={{ images_version }}">🗺️ View map</a>
+    <a href="/schedule?v={{ images_version }}">📅 Full schedule</a>
   </nav>
 
   <template id="event-card">

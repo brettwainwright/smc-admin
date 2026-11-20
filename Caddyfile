@@ -12,8 +12,8 @@
 
 	header Strict-Transport-Security "max-age=31536000"
 
-	# Admin forms only; no uploads
+	# Admin forms plus home page image uploads (the app caps images at 10 MB)
 	request_body {
-		max_size 1MB
+		max_size 12MB
 	}
 }

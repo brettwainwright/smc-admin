@@ -8,5 +8,6 @@ dependencies = [
     "django>=5.2",
     "django-bolt",
     "django-import-export[xlsx]>=4.4.6",
+    "pillow>=13.0.0",
     "pydantic-settings>=2.15.0",
 ]
