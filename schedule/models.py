@@ -97,19 +97,79 @@ class Event(models.Model):
         return f"{self.name} · {self.when} @ {self.location}"
 
 
+class TimeSlot(models.Model):
+    """A part of an event day that volunteers sign up for (e.g. Sun Jan 3 · Afternoon)."""
+
+    class Part(models.TextChoices):
+        MORNING = "morning", "Morning"
+        AFTERNOON = "afternoon", "Afternoon"
+        EVENING = "evening", "Evening"
+
+    day = models.DateField(choices=DAY_CHOICES)
+    part = models.CharField(max_length=10, choices=Part.choices)
+    start = models.TimeField()
+    end = models.TimeField(help_text="At or before the start means it runs past midnight.")
+
+    class Meta:
+        ordering = ["day", "start"]
+        constraints = [
+            in_event_days("day"),
+            models.UniqueConstraint(fields=["day", "part"], name="uq_timeslot_day_part"),
+        ]
+
+    @property
+    def starts_at(self) -> datetime:
+        return datetime.combine(self.day, self.start)
+
+    @property
+    def ends_at(self) -> datetime:
+        ends_at = datetime.combine(self.day, self.end)
+        # Same rule as Event: an end at or before the start runs past midnight (Evening ends at 00:00)
+        return ends_at if ends_at > self.starts_at else ends_at + timedelta(days=1)
+
+    def __str__(self) -> str:
+        return f"{format_day(self.day)} · {self.get_part_display()}"
+
+
 class Volunteer(models.Model):
     first = models.CharField("first name", max_length=100)
     last = models.CharField("last name", max_length=100)
     email = models.CharField(max_length=254, validators=[validate_email])
     phone = models.CharField(max_length=25, validators=[validate_phone])
-    availability_start = models.DateField("available from", choices=DAY_CHOICES)
-    start_time = models.TimeField()
-    availability_end = models.DateField("available until", choices=DAY_CHOICES, default=EVENT_LAST_DAY)
-    end_time = models.TimeField()
+    text_ok = models.BooleanField("OK to text", null=True, blank=True)
+
+    # Availability: any number of day/part-of-day slots
+    slots = models.ManyToManyField(TimeSlot, verbose_name="available slots", related_name="volunteers", blank=True)
+    availability_unsure = models.BooleanField("not sure of availability yet", default=False)
+    workload_preference = models.CharField(max_length=200, blank=True)
+
+    # Scheduling notes
+    physical_limitations = models.TextField(blank=True)
+    previous_role_preferences = models.TextField("role preferences from previous SMCs", blank=True)
+    additional_info = models.TextField("additional information", blank=True)
+    comments = models.TextField(blank=True)
+
+    # Background
+    volunteered_before = models.BooleanField("volunteered at SMC before", null=True, blank=True)
+    tech_comfortable = models.BooleanField("comfortable with technology", null=True, blank=True)
+    relationship = models.CharField("best describes them", max_length=100, blank=True)
+    invited_by = models.CharField("invited by (staff)", max_length=200, blank=True)
+    registered_at = models.DateTimeField("registered", null=True, blank=True)
+
+    # Demographics and mailing address
+    gender = models.CharField(max_length=20, blank=True)
+    age_range = models.CharField(max_length=20, blank=True)
+    street1 = models.CharField("street", max_length=200, blank=True)
+    street2 = models.CharField("street 2", max_length=200, blank=True)
+    city = models.CharField(max_length=100, blank=True)
+    state = models.CharField(max_length=50, blank=True)
+    postal_code = models.CharField(max_length=20, blank=True)
+    country = models.CharField(max_length=50, blank=True)
 
     class Meta:
         ordering = ["last", "first"]
-        constraints = [in_event_days("availability_start"), in_event_days("availability_end")]
+        # The registration import matches people on all three (families can share an email)
+        constraints = [models.UniqueConstraint(fields=["first", "last", "email"], name="uq_volunteer_name_email")]
 
     @property
     def full_name(self) -> str:
@@ -117,20 +177,26 @@ class Volunteer(models.Model):
 
     @property
     def availability(self) -> str:
-        start = f"{format_day(self.availability_start)}, {format_time(self.start_time)}"
-        end = f"{format_day(self.availability_end)}, {format_time(self.end_time)}"
-        return f"{start} → {end}"
+        """Sat Jan 2: Afternoon, Evening · Sun Jan 3: Morning"""
+        by_day: dict[date, list[str]] = {}
+        for slot in sorted(self.slots.all(), key=lambda s: s.starts_at):
+            by_day.setdefault(slot.day, []).append(slot.get_part_display())
+        summary = " · ".join(f"{format_day(d)}: {', '.join(parts)}" for d, parts in by_day.items()) or "No slots"
+        return f"{summary} (unsure)" if self.availability_unsure else summary
 
-    @property
-    def available_from(self) -> datetime:
-        return datetime.combine(self.availability_start, self.start_time)
+    def available_windows(self, slots=None) -> list[tuple[datetime, datetime]]:
+        """The volunteer's slots (or the given ones) merged into continuous stretches,
+        so back-to-back slots like Morning + Afternoon count as one."""
+        windows: list[list[datetime]] = []
+        for slot in sorted(self.slots.all() if slots is None else slots, key=lambda s: s.starts_at):
+            if windows and slot.starts_at <= windows[-1][1]:
+                windows[-1][1] = max(windows[-1][1], slot.ends_at)
+            else:
+                windows.append([slot.starts_at, slot.ends_at])
+        return [(start, end) for start, end in windows]
 
-    @property
-    def available_until(self) -> datetime:
-        return datetime.combine(self.availability_end, self.end_time)
-
-    def is_available_for(self, event: Event) -> bool:
-        return self.available_from <= event.starts_at and event.ends_at <= self.available_until
+    def is_available_for(self, event: Event, slots=None) -> bool:
+        return any(start <= event.starts_at and event.ends_at <= end for start, end in self.available_windows(slots))
 
     @property
     def contact_info(self) -> str:
@@ -143,20 +209,16 @@ class Volunteer(models.Model):
             for ev in self.events.select_related("location")
         ]
 
-    def availability_problems(self) -> list[str]:
-        # Events this volunteer is already on, checked against their (possibly edited) availability
-        if self.pk is None or None in (self.availability_start, self.availability_end, self.start_time, self.end_time):
+    def availability_problems(self, slots=None) -> list[str]:
+        """Events this volunteer is already on that fall outside their slots (or the given, possibly unsaved, ones)."""
+        if self.pk is None:
             return []
-        return availability_problems((self, ev) for ev in self.events.select_related("location"))
-
-    def clean(self) -> None:
-        if (
-            None not in (self.availability_start, self.availability_end, self.start_time, self.end_time)
-            and self.available_until <= self.available_from
-        ):
-            raise ValidationError({"end_time": "Availability must end after it starts."})
-        if problems := self.availability_problems():
-            raise ValidationError(" ".join(problems))
+        slots = list(self.slots.all() if slots is None else slots)
+        return sorted(
+            f"{self.full_name} is on {ev}, which those slots don't cover."
+            for ev in self.events.select_related("location")
+            if not self.is_available_for(ev, slots)
+        )
 
     def __str__(self) -> str:
         return f"{self.first} {self.last}"

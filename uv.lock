@@ -60,6 +60,15 @@ wheels = [
 ]
 
 [[package]]
+name = "diff-match-patch"
+version = "20241021"
+source = { registry = "https://pypi.org/simple" }
+sdist = { url = "https://files.pythonhosted.org/packages/0e/ad/32e1777dd57d8e85fa31e3a243af66c538245b8d64b7265bec9a61f2ca33/diff_match_patch-20241021.tar.gz", hash = "sha256:beae57a99fa48084532935ee2968b8661db861862ec82c6f21f4acdd6d835073", size = 39962, upload-time = "2024-10-21T19:41:21.094Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/f7/bb/2aa9b46a01197398b901e458974c20ed107935c26e44e37ad5b0e5511e44/diff_match_patch-20241021-py3-none-any.whl", hash = "sha256:93cea333fb8b2bc0d181b0de5e16df50dd344ce64828226bda07728818936782", size = 43252, upload-time = "2024-10-21T19:41:19.914Z" },
+]
+
+[[package]]
 name = "django"
 version = "6.1.2"
 source = { registry = "https://pypi.org/simple" }
@@ -100,6 +109,34 @@ wheels = [
     { url = "https://files.pythonhosted.org/packages/09/8b/4e031f692d5a516c11040878449bc7360073701d30eb80b8767489a89f36/django_bolt-0.13.0-cp314-cp314t-manylinux_2_17_aarch64.manylinux2014_aarch64.whl", hash = "sha256:198731efcc4ca35aed62c1bd9b182107516adb496d614d2318baed7f5408c051", size = 5673273, upload-time = "2026-10-24T14:19:29.098Z" },
     { url = "https://files.pythonhosted.org/packages/cc/98/ad343c0e79a9736e7f0d07b3230061e7ac8e7c27f8337cfb67bbe3af8fb8/django_bolt-0.13.0-cp314-cp314t-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:1e00e5d5fdadcfefbbe87e45d8890060673b913cefdbe9d5004e22abcbc86be5", size = 5984179, upload-time = "2026-10-24T14:19:31.057Z" },
     { url = "https://files.pythonhosted.org/packages/86/1b/4e566e808f203cfb8a83ef807aa04af62815304c3bf24333887f7f0e6ca4/django_bolt-0.13.0-cp314-cp314t-win_amd64.whl", hash = "sha256:25577b28d7fb9734221fda9e448581eb725a24d4a90c404cbeeaf3f21f89d5c5", size = 5290255, upload-time = "2026-10-24T14:19:33.222Z" },
+]
+
+[[package]]
+name = "django-import-export"
+version = "4.4.6"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "diff-match-patch" },
+    { name = "django" },
+    { name = "tablib" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/ae/be/925c17cf9aab449c9f6eb798c9710e398a78a763d862c44367fd65f51a6f/django_import_export-4.4.6.tar.gz", hash = "sha256:b56c22bab6ff192a4cb788492ff15deb0163a603fb19ad2bd7ec9b182b26520e", size = 2261770, upload-time = "2026-11-19T18:12:50.109Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/4f/45/9ed19ba3d5be2ae93c518db7a9682df3944f66836cf85c24c81f2589001f/django_import_export-4.4.6-py3-none-any.whl", hash = "sha256:cd847cb7db0cb76dcd5d129263b9a8630062c2f7d849183a7303ee1e1e0f9ab4", size = 162200, upload-time = "2026-11-19T18:12:48.212Z" },
+]
+
+[package.optional-dependencies]
+xlsx = [
+    { name = "tablib", extra = ["xlsx"] },
+]
+
+[[package]]
+name = "et-xmlfile"
+version = "2.0.0"
+source = { registry = "https://pypi.org/simple" }
+sdist = { url = "https://files.pythonhosted.org/packages/d3/38/af70d7ab1ae9d4da450eeec1fa3918940a5fafb9055e934af8d6eb0c2313/et_xmlfile-2.0.0.tar.gz", hash = "sha256:dab3f4764309081ce75662649be815c4c9081e88f0837825f90fd28317d4da54", size = 17234, upload-time = "2024-10-25T17:25:40.039Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/c1/8b/5fe2cc11fee489817272089c4203e679c63b570a5aaeb18d852ae3cbba6a/et_xmlfile-2.0.0-py3-none-any.whl", hash = "sha256:7a91720bc756843502c3b7504c77b8fe44217c85c537d85037f0f536151b2caa", size = 18059, upload-time = "2024-10-25T17:25:39.051Z" },
 ]
 
 [[package]]
@@ -215,6 +252,18 @@ wheels = [
     { url = "https://files.pythonhosted.org/packages/81/33/2fbaadf98b5510cac4bb56d2b03937e0b1fb4bfcd1ae6aba20361f299583/msgspec-0.22.0-cp315-cp315t-musllinux_1_2_x86_64.whl", hash = "sha256:0666a1520cab86796612e794e71107e0fbf5e8ff3ddcdfcfff8f1d94b860d2f1", size = 238220, upload-time = "2026-09-29T14:14:06.408Z" },
     { url = "https://files.pythonhosted.org/packages/f1/cc/b6be6041098ab859a8472983ccc2c08339fc2ef53f28d4f5fe7f4f34276b/msgspec-0.22.0-cp315-cp315t-win_amd64.whl", hash = "sha256:885c6e0c89d6103648525fe62aa78d600054dedf7b3713d23b15d7ddb6d66a13", size = 202939, upload-time = "2026-09-29T14:14:08.079Z" },
     { url = "https://files.pythonhosted.org/packages/5a/c1/664578dd98be70cd4ab1a9dcf3a181b1376b83c65ec41ee162130b58c8c0/msgspec-0.22.0-cp315-cp315t-win_arm64.whl", hash = "sha256:268594d0bae5510572599a6ab0364dd9de43c867d24a30856cd9f5edb63d8dc6", size = 202117, upload-time = "2026-09-29T14:14:09.891Z" },
+]
+
+[[package]]
+name = "openpyxl"
+version = "3.1.5"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "et-xmlfile" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/3d/f9/88d94a75de065ea32619465d2f77b29a0469500e99012523b91cc4141cd1/openpyxl-3.1.5.tar.gz", hash = "sha256:cf0e3cf56142039133628b5acffe8ef0c12bc902d2aadd3e0fe5878dc08d1050", size = 186464, upload-time = "2024-06-28T14:03:44.161Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/c0/da/977ded879c29cbd04de313843e76868e6e13408a94ed6b987245dc7c8506/openpyxl-3.1.5-py2.py3-none-any.whl", hash = "sha256:5282c12b107bffeef825f4617dc029afaf41d0ea60823bbb665ef3079dc79de2", size = 250910, upload-time = "2024-06-28T14:03:41.161Z" },
 ]
 
 [[package]]
@@ -423,6 +472,7 @@ source = { virtual = "." }
 dependencies = [
     { name = "django" },
     { name = "django-bolt" },
+    { name = "django-import-export", extra = ["xlsx"] },
     { name = "pydantic-settings" },
 ]
 
@@ -430,6 +480,7 @@ dependencies = [
 requires-dist = [
     { name = "django", specifier = ">=5.2" },
     { name = "django-bolt" },
+    { name = "django-import-export", extras = ["xlsx"], specifier = ">=4.4.6" },
     { name = "pydantic-settings", specifier = ">=2.15.0" },
 ]
 
@@ -440,6 +491,20 @@ source = { registry = "https://pypi.org/simple" }
 sdist = { url = "https://files.pythonhosted.org/packages/5f/d3/3f06a1006f2261d1342aefb3c71eed02f5d4ca5bdbecd86ebc12ad38306e/sqlparse-0.6.0.tar.gz", hash = "sha256:113c35c75365ab9cc9c7231d68c6428fb11c085fc8e9eb1ad659b7ddbf6cd2b9", size = 178477, upload-time = "2026-08-13T19:16:06.396Z" }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/d9/50/f00935da0ec7cbf325f8dc4f772ae46fbc7b672dd62876e73f0a94adda57/sqlparse-0.6.0-py3-none-any.whl", hash = "sha256:b861c0288ce2fa56209a9a6412d2e066ac664b3873b89c26c9d8415e8e32996f", size = 50070, upload-time = "2026-08-13T19:16:04.062Z" },
+]
+
+[[package]]
+name = "tablib"
+version = "3.10.0"
+source = { registry = "https://pypi.org/simple" }
+sdist = { url = "https://files.pythonhosted.org/packages/96/b9/59d9c8b9c34642e7a718e8a1a7a91af3eb9b48f79bac794263702d41519c/tablib-3.10.0.tar.gz", hash = "sha256:781cfa9a42de8f33c52aff857fd0a04e483de4fd1c53eaaa9a6aeac62bad11de", size = 127128, upload-time = "2026-07-31T17:30:15.577Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/fc/0f/3ae17545ff976687f679ed3a101df7017135ee04769e858a4ccea0cc3f3e/tablib-3.10.0-py3-none-any.whl", hash = "sha256:5721bf3a52d491f8f843628a3a3200db164f6ad9e92fb6eaa64dc3f945f30ad9", size = 50170, upload-time = "2026-07-31T17:30:04.925Z" },
+]
+
+[package.optional-dependencies]
+xlsx = [
+    { name = "openpyxl" },
 ]
 
 [[package]]

@@ -50,7 +50,9 @@
     function isFree(id, from, until) {
       var b = bookings[id];
       if (!b) return true;
-      if (new Date(b.from) > from || new Date(b.until) < until) return false;
+      // Back-to-back slots are already merged into windows; the event must fit inside one
+      var covered = b.windows.some(function (w) { return new Date(w[0]) <= from && until <= new Date(w[1]); });
+      if (!covered) return false;
       return !b.busy.some(function (slot) {
         return slot[2] !== eventId && new Date(slot[0]) < until && from < new Date(slot[1]);
       });

@@ -1,10 +1,10 @@
 import random
-from datetime import date, time
+from datetime import time
 
 from django.core.management.base import BaseCommand, CommandError
 from django.db import transaction
 
-from schedule.models import EVENT_DAYS, Event, EventType, Location, Volunteer
+from schedule.models import EVENT_DAYS, Event, EventType, Location, TimeSlot, Volunteer
 
 # All mock data is made up: example.com emails and 555-01xx phone numbers are reserved for fiction.
 # Locations and sessions mirror the placeholder map.jpeg / schedule.jpeg.
@@ -65,14 +65,12 @@ EVENTS = [
 ]
 
 
-def mock_availability(rng: random.Random) -> tuple[date, time, date, time]:
-    """Mostly whole-event volunteers, plus some who can only do a stretch of days."""
-    first, last = 0, len(EVENT_DAYS) - 1
+def mock_slots(rng: random.Random, slots: list[TimeSlot]) -> list[TimeSlot]:
+    """Mostly whole-event volunteers, plus some who can only do a run of consecutive slots."""
     if rng.random() < 0.6:
-        return EVENT_DAYS[first], time(8, 0), EVENT_DAYS[last], time(14, 0)
-    start = rng.randint(first, last - 1)
-    end = rng.randint(start + 1, last)
-    return EVENT_DAYS[start], rng.choice([time(8, 0), time(12, 0)]), EVENT_DAYS[end], rng.choice([time(14, 0), time(23, 59)])
+        return slots
+    start = rng.randint(0, len(slots) - 2)
+    return slots[start:rng.randint(start + 2, len(slots))]
 
 
 class Command(BaseCommand):
@@ -99,18 +97,18 @@ class Command(BaseCommand):
         types = {t.name: t for t in EventType.objects.all()}
         locations = {name: Location.objects.create(name=name) for name in LOCATIONS}
 
+        slots = list(TimeSlot.objects.all())
         names = rng.sample([(f, l) for f in FIRST_NAMES for l in LAST_NAMES], volunteers)
         people = []
         for n, (first, last) in enumerate(names):
-            start_day, start_time, end_day, end_time = mock_availability(rng)
             people.append(Volunteer(
                 first=first, last=last,
                 email=f"{first}.{last}{n}@example.com".lower(),
                 phone=f"555-01{n % 100:02d}",
-                availability_start=start_day, start_time=start_time,
-                availability_end=end_day, end_time=end_time,
             ))
         people = Volunteer.objects.bulk_create(people)
+        for v in people:
+            v.slots.set(mock_slots(rng, slots))
 
         assigned = 0
         booked: dict[int, list[Event]] = {v.pk: [] for v in people}
