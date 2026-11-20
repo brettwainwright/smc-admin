@@ -11,17 +11,20 @@ from django.shortcuts import redirect
 from django.template.response import TemplateResponse
 from django.urls import path, reverse
 from django.utils.html import format_html, format_html_join
+from import_export.admin import ImportMixin
 
 from schedule.models import (
     EVENT_DAYS,
     Event,
     EventType,
     Location,
+    TimeSlot,
     Volunteer,
     assignment_problems,
     format_day,
     format_time,
 )
+from schedule.resources import RegistrantsXLSX, VolunteerResource
 
 
 def staffing_badge(count: int, needed: int) -> str:
@@ -30,7 +33,7 @@ def staffing_badge(count: int, needed: int) -> str:
 
 
 def volunteer_bookings() -> dict[str, dict]:
-    """Each volunteer's availability window and the events they're on, for the event form's picker script.
+    """Each volunteer's availability (slots merged into windows) and the events they're on, for the event form's picker script.
 
     Keys are strings to match the <option> values in the volunteer <select>.
     """
@@ -40,11 +43,10 @@ def volunteer_bookings() -> dict[str, dict]:
         booked.setdefault(link.volunteer_id, []).append([ev.starts_at.isoformat(), ev.ends_at.isoformat(), ev.pk])
     return {
         str(v.pk): {
-            "from": v.available_from.isoformat(),
-            "until": v.available_until.isoformat(),
+            "windows": [[start.isoformat(), end.isoformat()] for start, end in v.available_windows()],
             "busy": booked.get(v.pk, []),
         }
-        for v in Volunteer.objects.all()
+        for v in Volunteer.objects.prefetch_related("slots")
     }
 
 
@@ -58,6 +60,14 @@ class LocationAdmin(admin.ModelAdmin):
 class EventTypeAdmin(admin.ModelAdmin):
     list_display = ["name"]
     search_fields = ["name"]
+
+
+@admin.register(TimeSlot)
+class TimeSlotAdmin(admin.ModelAdmin):
+    list_display = ["__str__", "start", "end"]
+    list_editable = ["start", "end"]
+    list_display_links = None
+    fields = ["day", "part", "start", "end"]
 
 
 class StaffingFilter(admin.SimpleListFilter):
@@ -87,7 +97,7 @@ class VolunteerChoiceField(forms.ModelMultipleChoiceField):
 
 class EventAdminForm(forms.ModelForm):
     volunteers = VolunteerChoiceField(
-        queryset=Volunteer.objects.annotate(shift_count=Count("events")),
+        queryset=Volunteer.objects.annotate(shift_count=Count("events")).prefetch_related("slots"),
         required=False,
         # Plain multi-select (not filter_horizontal) so the change_form script can filter its options
         widget=forms.SelectMultiple(attrs={"size": 15}),
@@ -286,36 +296,66 @@ class AvailableOnFilter(admin.SimpleListFilter):
     parameter_name = "available_on"
 
     def lookups(self, request, model_admin):
-        return [(d.isoformat(), format_day(d)) for d in EVENT_DAYS]
+        # Each whole day, then each slot
+        days = [(d.isoformat(), f"{format_day(d)} (any time)") for d in EVENT_DAYS]
+        return days + [(f"slot-{s.pk}", str(s)) for s in TimeSlot.objects.all()]
 
     def queryset(self, request, queryset):
-        # Any part of the day: their window starts on/before it and ends on/after it
-        if value := self.value():
-            day = date.fromisoformat(value)
-            return queryset.filter(availability_start__lte=day, availability_end__gte=day)
-        return queryset
+        match self.value():
+            case None:
+                return queryset
+            case str(value) if value.startswith("slot-"):
+                return queryset.filter(slots=value.removeprefix("slot-")).distinct()
+            case value:
+                return queryset.filter(slots__day=date.fromisoformat(value)).distinct()
+
+
+class VolunteerAdminForm(forms.ModelForm):
+    class Meta:
+        model = Volunteer
+        fields = "__all__"
+        widgets = {"slots": forms.CheckboxSelectMultiple}
+
+    def clean(self):
+        cleaned = super().clean()
+        # Slots are saved after the volunteer, so check the submitted ones against their existing events
+        if self.instance.pk and "slots" in cleaned:
+            if problems := self.instance.availability_problems(cleaned["slots"]):
+                raise ValidationError(problems)
+        return cleaned
 
 
 @admin.register(Volunteer)
-class VolunteerAdmin(admin.ModelAdmin):
+class VolunteerAdmin(ImportMixin, admin.ModelAdmin):
+    form = VolunteerAdminForm
+    # Import only: the registration export (see schedule/resources.py). Event CSV export covers contact lists.
+    resource_classes = [VolunteerResource]
+    import_formats = [RegistrantsXLSX]
     list_display = ["first", "last", "availability", "shift_count", "total_hours"]
-    list_filter = [ShiftsFilter, AvailableOnFilter]
+    list_filter = [ShiftsFilter, AvailableOnFilter, "availability_unsure", "volunteered_before"]
     search_fields = ["first", "last", "email", "phone"]
     list_per_page = 50
-    readonly_fields = ["shifts"]
-    fields = [
-        ("first", "last"),
-        ("email", "phone"),
-        ("availability_start", "start_time"),
-        ("availability_end", "end_time"),
-        "shifts",
+    readonly_fields = ["shifts", "registered_at"]
+    fieldsets = [
+        (None, {"fields": [("first", "last"), ("email", "phone"), "text_ok"]}),
+        ("Availability", {"fields": ["slots", "availability_unsure", "workload_preference"]}),
+        ("Scheduling notes", {"classes": ["collapse"], "fields": [
+            "physical_limitations", "previous_role_preferences", "additional_info", "comments",
+        ]}),
+        ("Background", {"classes": ["collapse"], "fields": [
+            ("volunteered_before", "tech_comfortable"), "relationship", "invited_by", "registered_at",
+        ]}),
+        ("Demographics & address", {"classes": ["collapse"], "fields": [
+            ("gender", "age_range"), ("street1", "street2"), ("city", "state", "postal_code"), "country",
+        ]}),
+        ("Shifts", {"fields": ["shifts"]}),
     ]
 
     def get_queryset(self, request):
         return (
             super().get_queryset(request)
             .annotate(shift_count=Count("events", distinct=True))
-            .prefetch_related(Prefetch("events", queryset=Event.objects.select_related("location")))
+            .prefetch_related(Prefetch("events", queryset=Event.objects.select_related("location")), "slots")
         )
 
     @admin.display(description="shifts", ordering="shift_count")
