@@ -17,6 +17,7 @@ from schedule.models import (
     EVENT_DAYS,
     Event,
     EventType,
+    HomePageImages,
     Location,
     TimeSlot,
     Volunteer,
@@ -60,6 +61,38 @@ class LocationAdmin(admin.ModelAdmin):
 class EventTypeAdmin(admin.ModelAdmin):
     list_display = ["name"]
     search_fields = ["name"]
+
+
+@admin.register(HomePageImages)
+class HomePageImagesAdmin(admin.ModelAdmin):
+    """A single record: the sidebar link goes straight to its upload form."""
+
+    fields = [("map", "map_preview"), ("schedule", "schedule_preview"), "updated"]
+    readonly_fields = ["map_preview", "schedule_preview", "updated"]
+
+    def has_add_permission(self, request) -> bool:
+        return False
+
+    def has_delete_permission(self, request, obj=None) -> bool:
+        return False
+
+    def changelist_view(self, request, extra_context=None):
+        return redirect("admin:schedule_homepageimages_change", HomePageImages.load().pk)
+
+    def preview(self, obj: HomePageImages, kind: str) -> str:
+        # Via the same route the home page links to (no /media/ URL); ?v= skips a cached old image
+        url = f"/images/{kind}?v={obj.updated:%Y%m%d%H%M%S}"
+        note = "" if getattr(obj, kind) else "Showing the placeholder mockup."
+        return format_html('<a href="{0}"><img src="{0}" alt="" style="max-width: 240px; max-height: 240px;"></a><p>{1}</p>',
+                           url, note)
+
+    @admin.display(description="current map")
+    def map_preview(self, obj: HomePageImages) -> str:
+        return self.preview(obj, "map")
+
+    @admin.display(description="current schedule")
+    def schedule_preview(self, obj: HomePageImages) -> str:
+        return self.preview(obj, "schedule")
 
 
 @admin.register(TimeSlot)
