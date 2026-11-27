@@ -25,12 +25,12 @@
     note.className = "help";
     volunteerSelect.after(note);
 
-    // "13:00", "13:00:00", or "1:00 PM" -> [hours, minutes]
+    // "13:00", "13:00:00", "1:00 PM", "1 pm", or "1pm" -> [hours, minutes] (same formats as smc/formats/en/formats.py)
     function parseTime(value) {
-      var m = /^\s*(\d{1,2}):(\d{2})(?::\d{2})?\s*([ap]\.?m\.?)?\s*$/i.exec(value);
-      if (!m) return null;
+      var m = /^\s*(\d{1,2})(?::(\d{2})(?::\d{2})?)?\s*([ap]\.?m\.?)?\s*$/i.exec(value);
+      if (!m || (m[2] === undefined && !m[3])) return null;  // a bare "5" isn't a time
       var h = Number(m[1]) % 12 + (m[3] && /p/i.test(m[3]) ? 12 : m[3] ? 0 : Math.floor(Number(m[1]) / 12) * 12);
-      return [h, Number(m[2])];
+      return [h, Number(m[2] || 0)];
     }
 
     function at(isoDay, hm) {

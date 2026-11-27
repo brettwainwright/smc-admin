@@ -56,6 +56,8 @@ DATABASES = {
 }
 
 LANGUAGE_CODE = "en-us"
+# 12-hour admin times (2:00 PM); see smc/formats/en/formats.py
+FORMAT_MODULE_PATH = ["smc.formats"]
 # Event times are local wall-clock times, so store them naive
 TIME_ZONE = env.time_zone
 USE_I18N = True
