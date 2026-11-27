@@ -5,6 +5,7 @@ from django import forms
 from django.contrib import admin
 from django.contrib.admin.widgets import AdminTimeWidget
 from django.core.exceptions import ValidationError
+from django.db import models
 from django.db.models import Count, F, Prefetch
 from django.http import HttpResponse
 from django.shortcuts import redirect
@@ -89,11 +90,17 @@ class HomePageImagesAdmin(admin.ModelAdmin):
         return self.preview(obj, "schedule")
 
 
+def time_widget() -> AdminTimeWidget:
+    """12-hour time input: 2:00 PM (no leading zero). Parsing formats are in smc/formats/en/formats.py."""
+    return AdminTimeWidget(format="%-I:%M %p")
+
+
 @admin.register(TimeSlot)
 class TimeSlotAdmin(admin.ModelAdmin):
     list_display = ["__str__", "start", "end"]
     list_editable = ["start", "end"]
     list_display_links = None
+    formfield_overrides = {models.TimeField: {"widget": time_widget()}}
     fields = ["day", "part", "start", "end"]
 
 
@@ -128,15 +135,15 @@ class EventAdminForm(forms.ModelForm):
         required=False,
         # Plain multi-select (not filter_horizontal) so the change_form script can filter its options
         widget=forms.SelectMultiple(attrs={"size": 15}),
-        help_text="Only volunteers who are available and not on an overlapping event are listed. "
+        help_text="Volunteers already on an overlapping event aren't listed. "
                   "Hold Ctrl (Cmd on a Mac) to select more than one.",
     )
 
     class Meta:
         model = Event
         fields = ["name", "type", "day", "start", "end", "location", "needed", "volunteers", "description", "details"]
-        # 13:00 rather than 13:00:00
-        widgets = {"start": AdminTimeWidget(format="%H:%M"), "end": AdminTimeWidget(format="%H:%M")}
+        # 2:00 PM rather than 14:00:00
+        widgets = {"start": time_widget(), "end": time_widget()}
 
     def clean(self):
         cleaned = super().clean()

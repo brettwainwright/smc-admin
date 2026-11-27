@@ -58,6 +58,7 @@ There are no tests, linter, or formatter configured.
   - Board and roster are custom views added via `EventAdmin.get_urls`.
   - Print and CSV export are admin actions. The CSV and roster contain volunteer contact details.
   - Staffing badges use `staff_count`, annotated in `get_queryset`; `StaffingFilter` and the "staffing" column depend on that annotation.
+  - Admin time inputs are 12-hour (2:00 PM): `time_widget()` renders them and `smc/formats/en/formats.py` (via `FORMAT_MODULE_PATH`) sets the accepted input formats, which still include 24-hour times.
   - The event form's volunteer `<select>` is a plain multi-select (not `filter_horizontal`) so `admin/schedule/event/change_form.html` can hide double-booked volunteers client-side from `volunteer_bookings`.
 - **Template overrides.** `schedule` is listed *before* `django.contrib.admin` in `INSTALLED_APPS` so `schedule/templates/admin/base_site.html` overrides the admin's. Use `{% comment %}` for multi-line template comments: `{# #}` is single-line only and otherwise renders as page text. Django 6 admin breadcrumbs are `<ol class="breadcrumbs"><li>…`.
 - **Admin CSS specificity.** The admin underlines links with `a:not(#header a, #content-main.app-list a, …)`, which counts as (1,1,2). Overrides need more, e.g. `#content .board a.board-block`.
