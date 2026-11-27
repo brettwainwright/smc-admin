@@ -1,12 +1,43 @@
 {% extends "admin/change_form.html" %}
+{% block extrastyle %}
+{{ block.super }}
+<style>
+  /* Volunteer checkboxes in columns, scrolling rather than making the page very long */
+  #content #id_volunteers {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(16rem, 1fr));
+    gap: .15rem 1rem;
+    max-height: 24rem;
+    overflow-y: auto;
+    padding: .5rem .75rem;
+    border: 1px solid var(--border-color);
+    border-radius: 4px;
+    flex: 1 1 100%;
+  }
+  #content #id_volunteers > div[hidden] { display: none; }
+  #content #id_volunteers label {
+    display: flex;
+    align-items: center;
+    gap: .4rem;
+    width: auto;
+    min-width: 0;
+    float: none;
+    padding: .2rem 0;
+    font-weight: normal;
+    color: var(--body-fg);
+    cursor: pointer;
+  }
+  #content #id_volunteers input { margin: 0; }
+</style>
+{% endblock %}
 {% block admin_change_form_document_ready %}
 {{ block.super }}
 {{ volunteer_bookings|json_script:"volunteer-bookings" }}
 {% comment %}
-  Narrows the volunteer list to people who aren't already on an event overlapping this one's
-  day/times (availability slots aren't checked), updating as the day or times change. volunteer_bookings comes from
-  EventAdmin.changeform_view. The save-time check (EventAdminForm.clean) still applies; this just
-  hides choices that would fail it.
+  Hides the volunteer checkboxes of people already on an event overlapping this one's day/times
+  (availability slots aren't checked), updating as the day or times change, and counts who's ticked.
+  volunteer_bookings comes from EventAdmin.changeform_view. The save-time check
+  (EventAdminForm.clean) still applies; this just hides choices that would fail it.
 {% endcomment %}
 <script>
   (function () {
@@ -14,16 +45,19 @@
     var day = document.getElementById("id_day");
     var start = document.getElementById("id_start");
     var end = document.getElementById("id_end");
-    var volunteerSelect = document.getElementById("id_volunteers");
-    if (!day || !start || !end || !volunteerSelect) return;
+    var needed = document.getElementById("id_needed");
+    var list = document.getElementById("id_volunteers");
+    if (!day || !start || !end || !list) return;
 
     // This event's id from the URL (/admin/schedule/event/<id>/change/), so its own slot isn't a clash
     var match = location.pathname.match(/\/event\/(\d+)\/change\//);
     var eventId = match ? Number(match[1]) : null;
-    var allOptions = Array.from(volunteerSelect.options);
+    var rows = Array.from(list.querySelectorAll("input[name=volunteers]")).map(function (box) {
+      return { box: box, row: box.closest("#id_volunteers > div") || box.parentElement };
+    });
     var note = document.createElement("p");
     note.className = "help";
-    volunteerSelect.after(note);
+    list.after(note);
 
     // "13:00", "13:00:00", "1:00 PM", "1 pm", or "1pm" -> [hours, minutes] (same formats as smc/formats/en/formats.py)
     function parseTime(value) {
@@ -56,23 +90,30 @@
 
     function filterVolunteers() {
       var w = eventWindow();
-      // Keep anyone already selected so a change of time never silently drops them;
-      // if they clash, saving shows why
-      var keep = w ? allOptions.filter(function (o) { return o.selected || isFree(o.value, w[0], w[1]); }) : allOptions;
-      volunteerSelect.replaceChildren.apply(volunteerSelect, keep);
+      var shown = 0, ticked = 0;
+      rows.forEach(function (r) {
+        // Keep anyone ticked visible so a change of time never silently hides them;
+        // if they clash, saving shows why
+        r.row.hidden = !(r.box.checked || !w || isFree(r.box.value, w[0], w[1]));
+        if (!r.row.hidden) shown++;
+        if (r.box.checked) ticked++;
+      });
+      var count = ticked + " selected" + (needed && needed.value ? " (needed: " + needed.value + ")" : "") + ".";
       note.textContent = w
-        ? keep.length + " of " + allOptions.length + " volunteers aren't already on another event at this time."
-        : "Set the day, start, and end to see who's free.";
+        ? shown + " of " + rows.length + " volunteers aren't already on another event at this time · " + count
+        : "Set the day, start, and end to see who's free. " + count;
     }
 
-    [day, start, end].forEach(function (input) {
+    [day, start, end, needed].forEach(function (input) {
+      if (!input) return;
       input.addEventListener("change", filterVolunteers);
       input.addEventListener("input", filterVolunteers);
     });
+    list.addEventListener("change", filterVolunteers);
     // The admin's clock/"Now" shortcuts set the value without firing change, so re-check after other clicks
-    // (not ones in the volunteer list itself, which would rebuild it mid-selection)
+    // (ticking a box is handled by the change listener above)
     document.addEventListener("click", function (e) {
-      if (!volunteerSelect.contains(e.target)) setTimeout(filterVolunteers, 0);
+      if (!list.contains(e.target)) setTimeout(filterVolunteers, 0);
     });
     filterVolunteers();
   })();

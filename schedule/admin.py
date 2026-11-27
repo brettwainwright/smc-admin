@@ -133,10 +133,9 @@ class EventAdminForm(forms.ModelForm):
     volunteers = VolunteerChoiceField(
         queryset=Volunteer.objects.annotate(shift_count=Count("events")).prefetch_related("slots"),
         required=False,
-        # Plain multi-select (not filter_horizontal) so the change_form script can filter its options
-        widget=forms.SelectMultiple(attrs={"size": 15}),
-        help_text="Volunteers already on an overlapping event aren't listed. "
-                  "Hold Ctrl (Cmd on a Mac) to select more than one.",
+        # Checkboxes (not filter_horizontal) so the change_form script can hide clashing volunteers
+        widget=forms.CheckboxSelectMultiple,
+        help_text="Tick everyone working this event. Volunteers already on an overlapping event aren't listed.",
     )
 
     class Meta:
