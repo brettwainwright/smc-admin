@@ -3,8 +3,8 @@
 {{ block.super }}
 {{ volunteer_bookings|json_script:"volunteer-bookings" }}
 {% comment %}
-  Narrows the volunteer list to people who are available for this event's day/times and not on an
-  overlapping event, updating as the day or times change. volunteer_bookings comes from
+  Narrows the volunteer list to people who aren't already on an event overlapping this one's
+  day/times (availability slots aren't checked), updating as the day or times change. volunteer_bookings comes from
   EventAdmin.changeform_view. The save-time check (EventAdminForm.clean) still applies; this just
   hides choices that would fail it.
 {% endcomment %}
@@ -47,25 +47,21 @@
       return [from, until];
     }
 
+    // Free unless they're already on another event that overlaps this one (availability isn't checked)
     function isFree(id, from, until) {
-      var b = bookings[id];
-      if (!b) return true;
-      // Back-to-back slots are already merged into windows; the event must fit inside one
-      var covered = b.windows.some(function (w) { return new Date(w[0]) <= from && until <= new Date(w[1]); });
-      if (!covered) return false;
-      return !b.busy.some(function (slot) {
-        return slot[2] !== eventId && new Date(slot[0]) < until && from < new Date(slot[1]);
+      return !(bookings[id] || []).some(function (b) {
+        return b[2] !== eventId && new Date(b[0]) < until && from < new Date(b[1]);
       });
     }
 
     function filterVolunteers() {
       var w = eventWindow();
       // Keep anyone already selected so a change of time never silently drops them;
-      // if they don't fit, saving shows why
+      // if they clash, saving shows why
       var keep = w ? allOptions.filter(function (o) { return o.selected || isFree(o.value, w[0], w[1]); }) : allOptions;
       volunteerSelect.replaceChildren.apply(volunteerSelect, keep);
       note.textContent = w
-        ? keep.length + " of " + allOptions.length + " volunteers are free at this time."
+        ? keep.length + " of " + allOptions.length + " volunteers aren't already on another event at this time."
         : "Set the day, start, and end to see who's free.";
     }
 

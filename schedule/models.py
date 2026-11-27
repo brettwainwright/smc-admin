@@ -197,7 +197,9 @@ class Volunteer(models.Model):
         return [(start, end) for start, end in windows]
 
     def is_available_for(self, event: Event, slots=None) -> bool:
-        return any(start <= event.starts_at and event.ends_at <= end for start, end in self.available_windows(slots))
+        """True if the event overlaps any of their slots (or the given ones); merely touching one doesn't count.
+        Not enforced on assignments (only double-booking is); seed_mock uses it to make realistic data."""
+        return any(start < event.ends_at and event.starts_at < end for start, end in self.available_windows(slots))
 
     @property
     def contact_info(self) -> str:
@@ -210,47 +212,25 @@ class Volunteer(models.Model):
             for ev in self.events.select_related("location")
         ]
 
-    def availability_problems(self, slots=None) -> list[str]:
-        """Events this volunteer is already on that fall outside their slots (or the given, possibly unsaved, ones)."""
-        if self.pk is None:
-            return []
-        slots = list(self.slots.all() if slots is None else slots)
-        return sorted(
-            f"{self.full_name} is on {ev}, which those slots don't cover."
-            for ev in self.events.select_related("location")
-            if not self.is_available_for(ev, slots)
-        )
-
     def __str__(self) -> str:
         return f"{self.first} {self.last}"
 
 
 def assignment_problems(event: Event, volunteers) -> list[str]:
     """Why these volunteers can't work this event (using its current, possibly unsaved, times):
-    it's outside their availability, or it overlaps another event they're already on."""
-    volunteers = list(volunteers)
-    problems = availability_problems((v, event) for v in volunteers)
+    it overlaps another event they're already on. Availability (slots) is deliberately not checked."""
     # Their other events; the event itself is excluded so editing its own times isn't a clash
     links = (
-        Event.volunteers.through.objects.filter(volunteer__in=volunteers)
+        Event.volunteers.through.objects.filter(volunteer__in=list(volunteers))
         .exclude(event_id=event.pk)
         .select_related("volunteer", "event__location")
     )
-    problems += [
+    problems = [
         f"{link.volunteer.full_name} is already on {link.event} at that time."
         for link in links
         if link.event.overlaps(event)
     ]
     return sorted(set(problems))
-
-
-def availability_problems(pairs) -> list[str]:
-    """Messages for each (volunteer, event) pair where the event falls outside their availability."""
-    return sorted(
-        f"{v.full_name} isn't available for {ev} (available {v.availability})."
-        for v, ev in set(pairs)
-        if not v.is_available_for(ev)
-    )
 
 
 def home_image(**kwargs) -> models.ImageField:

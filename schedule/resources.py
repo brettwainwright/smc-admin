@@ -9,7 +9,6 @@ import re
 from datetime import date
 
 import tablib
-from django.core.exceptions import ValidationError
 from import_export import fields, resources, widgets
 from import_export.formats.base_formats import XLSX
 
@@ -127,9 +126,3 @@ class VolunteerResource(resources.ModelResource):
             if isinstance(value, str):
                 row[key] = value.strip()
         row["availability_unsure"] = NOT_SURE in str(row.get("slots") or "").lower()
-
-    def save_m2m(self, instance, row, **kwargs):
-        super().save_m2m(instance, row, **kwargs)
-        # Updating someone's slots mustn't strand events they're already on
-        if problems := instance.availability_problems():
-            raise ValidationError(" ".join(problems))
