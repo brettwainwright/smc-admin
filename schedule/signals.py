@@ -1,13 +1,12 @@
-"""Reject adding a volunteer to an event outside their availability or on two events at once.
+"""Reject adding a volunteer to two overlapping events (double-booking).
+
+Availability (slots) is deliberately not checked: event times needn't line up with slot times.
 
 Forms surface the same checks as field errors first (EventAdminForm.clean); this signal is the
 backstop for writes that don't go through a form.
 
-Changes that could strand existing assignments aren't re-checked here:
-- an event's times: the admin saves the event before its new volunteer list, so a pre_save check
-  would test the times against the old list and could wrongly fail;
-- a volunteer's slots: slots.set() removes old slots before adding new ones, so an m2m_changed check
-  would fail mid-way. VolunteerAdminForm.clean and the import resource check slots instead.
+An event's times aren't re-checked here: the admin saves the event before its new volunteer list,
+so a pre_save check would test the times against the old list and could wrongly fail.
 """
 
 from django.core.exceptions import ValidationError
@@ -32,6 +31,6 @@ def check_added_volunteers(sender, instance, action: str, reverse: bool, pk_set:
             if a.overlaps(b)
         ]
     else:
-        problems = assignment_problems(instance, Volunteer.objects.filter(pk__in=pk_set).prefetch_related("slots"))
+        problems = assignment_problems(instance, Volunteer.objects.filter(pk__in=pk_set))
     if problems:
         raise ValidationError(" ".join(sorted(set(problems))))

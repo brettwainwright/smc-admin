@@ -33,22 +33,16 @@ def staffing_badge(count: int, needed: int) -> str:
     return format_html('<span class="staffing staffing-{}">{} / {}</span>', status, count, needed)
 
 
-def volunteer_bookings() -> dict[str, dict]:
-    """Each volunteer's availability (slots merged into windows) and the events they're on, for the event form's picker script.
+def volunteer_bookings() -> dict[str, list]:
+    """The events each volunteer is on ([start, end, event id]), for the event form's picker script.
 
     Keys are strings to match the <option> values in the volunteer <select>.
     """
-    booked: dict[int, list] = {}
+    booked: dict[str, list] = {}
     for link in Event.volunteers.through.objects.select_related("event"):
         ev = link.event
-        booked.setdefault(link.volunteer_id, []).append([ev.starts_at.isoformat(), ev.ends_at.isoformat(), ev.pk])
-    return {
-        str(v.pk): {
-            "windows": [[start.isoformat(), end.isoformat()] for start, end in v.available_windows()],
-            "busy": booked.get(v.pk, []),
-        }
-        for v in Volunteer.objects.prefetch_related("slots")
-    }
+        booked.setdefault(str(link.volunteer_id), []).append([ev.starts_at.isoformat(), ev.ends_at.isoformat(), ev.pk])
+    return booked
 
 
 @admin.register(Location)
@@ -348,14 +342,6 @@ class VolunteerAdminForm(forms.ModelForm):
         model = Volunteer
         fields = "__all__"
         widgets = {"slots": forms.CheckboxSelectMultiple}
-
-    def clean(self):
-        cleaned = super().clean()
-        # Slots are saved after the volunteer, so check the submitted ones against their existing events
-        if self.instance.pk and "slots" in cleaned:
-            if problems := self.instance.availability_problems(cleaned["slots"]):
-                raise ValidationError(problems)
-        return cleaned
 
 
 @admin.register(Volunteer)
